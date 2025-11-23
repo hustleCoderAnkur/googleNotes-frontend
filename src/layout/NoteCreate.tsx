@@ -237,17 +237,15 @@ function NoteCreate() {
                         {isListMode ? (
                             <NoteList/>
                         ) : (
-                            <div
-                                ref={editorRef}
-                                contentEditable
-                                suppressContentEditableWarning
-                                onInput={handleInput}
-                                className="w-full min-h-[60px] text-sm text-gray-800 outline-none"
-                                style={{
-                                    minHeight: '60px',
-                                }}
-                                data-placeholder="Take a note..."
-                            ></div>
+                                <div
+                                    ref={editorRef}
+                                    contentEditable
+                                    suppressContentEditableWarning
+                                    onInput={handleInput}
+                                    className="w-full min-h-[60px] text-sm text-gray-800 outline-none block whitespace-pre-wrap"
+                                    data-placeholder="Take a note..."
+                                ></div>
+
                         )}
 
                         {images.length > 0 && (

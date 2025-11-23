@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useRef, useState } from "react";
 import { Dropdown, DropdownItem } from "./DropDown.tsx";
 import FormatButton from "./fromatBtn.tsx";
 import ToolButton from "./ToolBtn.tsx";
@@ -68,6 +68,9 @@ function NoteDown({
     const [isColorOpen, setIsColorOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
 
+    const editorRef = useRef<HTMLDivElement>(null);
+
+
     const colors: ColorOption[] = [
         { name: 'Default', bgClass: 'bg-black', borderClass: 'border-gray-300', hex: '#000000' },
         { name: 'Red', bgClass: 'bg-red-500', borderClass: 'border-red-600', hex: '#ff5252' },
@@ -101,6 +104,11 @@ function NoteDown({
         }, 2000);
     };
 
+    const apply = (command:string,value?:string) => {
+        document.execCommand(command, false, value);
+        editorRef.current?.focus();
+    }
+
     return (
         <>
             <div className="flex items-center gap-1">
@@ -116,16 +124,32 @@ function NoteDown({
                     {isTextFormatOpen && (
                         <Dropdown onClose={() => setIsTextFormatOpen(false)}>
                             <div className="p-2">
+
                                 <div className="flex items-center gap-1 mb-2 pb-2 border-b border-gray-200">
-                                    <FormatButton icon={Heading1} label="Heading 1" />
-                                    <FormatButton icon={Heading2} label="Heading 2" />
-                                    <FormatButton icon={CaseSensitive} label="Normal text" />
+                                    <FormatButton 
+                                    onClick={()=>apply("formatBlock","H1")}
+                                    icon={Heading1} label="Heading 1" />
+                                    <FormatButton 
+                                        onClick={()=>apply("formatBlock", "H2")}
+                                    icon={Heading2} label="Heading 2" />
+                                    <FormatButton 
+                                        onClick={()=>apply("formatBlock", "P")}
+                                    icon={CaseSensitive} label="Normal text" />
                                 </div>
+
                                 <div className="flex items-center gap-1">
-                                    <FormatButton icon={Bold} label="Bold" />
-                                    <FormatButton icon={Italic} label="Italic" />
-                                    <FormatButton icon={Underline} label="Underline" />
-                                    <FormatButton icon={RemoveFormatting} label="Remove formatting" />
+                                    <FormatButton 
+                                    onClick={()=>apply("bold")}
+                                    icon={Bold} label="Bold" />
+                                    <FormatButton 
+                                    onClick={()=>apply("italic")}
+                                    icon={Italic} label="Italic" />
+                                    <FormatButton 
+                                    onClick={()=>apply("underline")}
+                                    icon={Underline} label="Underline" />
+                                    <FormatButton 
+                                        onClick={()=>apply("removeFormat")}
+                                    icon={RemoveFormatting} label="Remove formatting" />
                                 </div>
                             </div>
                         </Dropdown>
