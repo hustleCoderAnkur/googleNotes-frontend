@@ -1,5 +1,4 @@
-
-import { useRef, useState } from "react";
+import { useEffect, useState } from "react";
 import { Dropdown, DropdownItem } from "./DropDown.tsx";
 import FormatButton from "./fromatBtn.tsx";
 import ToolButton from "./ToolBtn.tsx";
@@ -16,15 +15,14 @@ import {
     User,
     UserPlus,
     Type,
-    Heading1,
-    Heading2,
-    CaseSensitive,
     Bold,
     Italic,
     Underline,
     RemoveFormatting,
     Check,
-
+    // Heading1,
+    // Heading2,
+    // CaseSensitive,
 } from "lucide-react";
 
 interface ColorOption {
@@ -50,12 +48,12 @@ interface NoteDownProps {
     handleRedo: () => void;
 }
 
-
 function NoteDown({
     onClose,
     bgColor,
     setBgColor,
     fileInputRef,
+    editorRef,
     history,
     historyIndex,
     handleUndo,
@@ -68,8 +66,7 @@ function NoteDown({
     const [isColorOpen, setIsColorOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
 
-    const editorRef = useRef<HTMLDivElement>(null);
-
+    
 
     const colors: ColorOption[] = [
         { name: 'Default', bgClass: 'bg-black', borderClass: 'border-gray-300', hex: '#000000' },
@@ -109,6 +106,11 @@ function NoteDown({
         editorRef.current?.focus();
     }
 
+    useEffect(() => {
+        document.execCommand("defaultParagraphSeparator", false, "p");
+    }, []);
+
+
     return (
         <>
             <div className="flex items-center gap-1">
@@ -121,21 +123,22 @@ function NoteDown({
                         }}
                         label="Text formatting"
                     />
+                    
                     {isTextFormatOpen && (
                         <Dropdown onClose={() => setIsTextFormatOpen(false)}>
                             <div className="p-2">
 
-                                <div className="flex items-center gap-1 mb-2 pb-2 border-b border-gray-200">
-                                    <FormatButton 
-                                    onClick={()=>apply("formatBlock","H1")}
-                                    icon={Heading1} label="Heading 1" />
-                                    <FormatButton 
-                                        onClick={()=>apply("formatBlock", "H2")}
-                                    icon={Heading2} label="Heading 2" />
-                                    <FormatButton 
-                                        onClick={()=>apply("formatBlock", "P")}
-                                    icon={CaseSensitive} label="Normal text" />
-                                </div>
+                                {/* <div className="flex items-center gap-1 mb-2 pb-2 border-b border-gray-200">
+                                    <FormatButton
+                                        onClick={() => apply("formatBlock", "H1")}
+                                        icon={Heading1} label="Heading 1" />
+                                    <FormatButton
+                                        onClick={() => apply("formatBlock", "H2")}
+                                        icon={Heading2} label="Heading 2" />
+                                    <FormatButton
+                                        onClick={() => apply("formatBlock", "P")}
+                                        icon={CaseSensitive} label="Normal text" />
+                                </div> */}
 
                                 <div className="flex items-center gap-1">
                                     <FormatButton 
@@ -165,6 +168,7 @@ function NoteDown({
                         }}
                         label="Remind me"
                     />
+
                     {isReminderOpen && (
                         <Dropdown onClose={() => setIsReminderOpen(false)}>
                             <div className="p-3 min-w-[280px]">
@@ -191,6 +195,7 @@ function NoteDown({
                         }}
                         label="Collaborator"
                     />
+
                     {isCollaboratorOpen && (
                         <Dropdown onClose={() => setIsCollaboratorOpen(false)}>
                             <div className="p-4 min-w-[320px]">
@@ -228,6 +233,7 @@ function NoteDown({
                         }}
                         label="Background options"
                     />
+
                     {isColorOpen && (
                         <Dropdown onClose={() => setIsColorOpen(false)}>
                             <div className="p-3 min-w-[280px]">
@@ -270,6 +276,7 @@ function NoteDown({
                         }}
                         label="More"
                     />
+
                     {isMoreMenuOpen && (
                         <Dropdown onClose={() => setIsMoreMenuOpen(false)}>
                             <div className="py-2 min-w-[200px]">
