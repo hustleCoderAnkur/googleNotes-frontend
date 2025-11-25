@@ -8,7 +8,6 @@ import {
     MoreVertical,
     Archive,
     Image,
-    MapPin,
     Palette,
     Redo2,
     Undo2,
@@ -24,6 +23,7 @@ import {
     // Heading2,
     // CaseSensitive,
 } from "lucide-react";
+import Button from "./Button.tsx";
 
 interface ColorOption {
     name: string;
@@ -60,13 +60,13 @@ function NoteDown({
     handleRedo
 }: NoteDownProps) {
     const [isReminderOpen, setIsReminderOpen] = useState(false);
+    const [reminder, setReminder ] = useState(false)
     const [isCollaboratorOpen, setIsCollaboratorOpen] = useState(false);
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
     const [isTextFormatOpen, setIsTextFormatOpen] = useState(false);
     const [isColorOpen, setIsColorOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
 
-    
 
     const colors: ColorOption[] = [
         { name: 'Default', bgClass: 'bg-black', borderClass: 'border-gray-300', hex: '#000000' },
@@ -161,71 +161,6 @@ function NoteDown({
 
                 <div className="relative">
                     <ToolButton
-                        icon={Bell}
-                        onClick={() => {
-                            closeAllDropdowns();
-                            setIsReminderOpen(!isReminderOpen);
-                        }}
-                        label="Remind me"
-                    />
-
-                    {isReminderOpen && (
-                        <Dropdown onClose={() => setIsReminderOpen(false)}>
-                            <div className="p-3 min-w-[280px]">
-                                <h3 className="text-sm font-medium text-gray-700 mb-2">Remind me</h3>
-                                <p className="text-xs text-gray-500 mb-3">Saved in Google Reminders</p>
-                                <div className="space-y-1">
-                                    <DropdownItem icon={Clock}>today, 8:00 PM</DropdownItem>
-                                    <DropdownItem icon={Clock}>Tomorrow, 8:00 AM</DropdownItem>
-                                    <DropdownItem icon={Clock}>Next week, Mon, 8:00 AM</DropdownItem>
-                                    <DropdownItem icon={Clock}>Pick date & time</DropdownItem>
-                                    <DropdownItem icon={MapPin}>Pick place</DropdownItem>
-                                </div>
-                            </div>
-                        </Dropdown>
-                    )}
-                </div>
-
-                <div className="relative">
-                    <ToolButton
-                        icon={UserPlus}
-                        onClick={() => {
-                            closeAllDropdowns();
-                            setIsCollaboratorOpen(!isCollaboratorOpen);
-                        }}
-                        label="Collaborator"
-                    />
-
-                    {isCollaboratorOpen && (
-                        <Dropdown onClose={() => setIsCollaboratorOpen(false)}>
-                            <div className="p-4 min-w-[320px]">
-                                <h3 className="text-sm font-medium text-gray-700 mb-3">Collaborators</h3>
-                                <div className="flex items-center gap-2 mb-3">
-                                    <User size={20} className="text-gray-600" />
-                                    <div className="flex-1">
-                                        <p className="text-sm font-medium text-gray-800">You (Owner)</p>
-                                        <p className="text-xs text-gray-500">user@example.com</p>
-                                    </div>
-                                </div>
-                                <div className="flex items-center gap-2 border-t pt-3 cursor-pointer">
-                                    <UserPlus size={20} className="text-gray-600" />
-                                    <input
-                                        type="email"
-                                        placeholder="Person or email to share with"
-                                        className="flex-1 text-sm outline-none"
-                                    />
-                                </div>
-                                <div className="flex justify-end gap-2 mt-4">
-                                    <button onClick={onClose} className="px-4 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
-                                    <button className="px-4 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
-                                </div>
-                            </div>
-                        </Dropdown>
-                    )}
-                </div>
-
-                <div className="relative">
-                    <ToolButton
                         icon={Palette}
                         onClick={() => {
                             closeAllDropdowns();
@@ -237,7 +172,7 @@ function NoteDown({
                     {isColorOpen && (
                         <Dropdown onClose={() => setIsColorOpen(false)}>
                             <div className="p-3 min-w-[280px]">
-                                <h3 className="text-sm font-medium text-gray-700 mb-3">Background color</h3>
+                                <h3 className="text-sm  text-gray-700 mb-3">Background color</h3>
                                 <div className="grid grid-cols-5 gap-2">
                                     {colors.map((color) => (
                                         <button
@@ -259,6 +194,151 @@ function NoteDown({
                         </Dropdown>
                     )}
                 </div>
+
+                <div className="relative">
+                    <ToolButton
+                        icon={Bell}
+                        onClick={() => {
+                            closeAllDropdowns();
+                            setIsReminderOpen(!isReminderOpen);
+                        }}
+                        label="Remind me"
+                    />
+
+                    {isReminderOpen && (
+                        <Dropdown onClose={() => {
+                            setIsReminderOpen(false);
+                            setReminder(false);
+                        }}>
+                            <div className="p-3 min-w-[280px]">
+                                <h3 className="text-sm  text-gray-700 mb-2">Remind me</h3>
+                                <p className="text-xs text-gray-500 mb-3">Saved in Google Reminders</p>
+
+                                {!reminder ? (
+                                    <div className="space-y-1">
+                                        <DropdownItem
+                                            icon={Clock}
+                                            onClick={() => { setReminder(true) }}
+                                        >
+                                            Today, 8:00 PM
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            icon={Clock}
+                                            onClick={() => { setReminder(true) }}
+                                        >
+                                            Tomorrow, 8:00 AM
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            icon={Clock}
+                                            onClick={() => { setReminder(true) }}
+                                        >
+                                            Next week, Mon, 8:00 AM
+                                        </DropdownItem>
+                                        <DropdownItem
+                                            icon={Clock}
+                                            onClick={() => setReminder(true)}
+                                        >
+                                            Pick date & time
+                                        </DropdownItem>
+                                    </div>
+                                ) : (
+                                        <div className="space-y-3 mt-2">
+                                            <h2 className="text-sm font-semibold text-gray-700">Pick date & time</h2>
+
+                                            
+                                            <input
+                                                type="date"
+                                                className="w-full border rounded-md px-3 py-2 text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition"
+                                            />
+
+                                            
+                                            <select
+                                                className="w-full border rounded-md px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition cursor-pointer"
+                                                defaultValue="none"
+                                            >
+                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Morning">Morning</option>
+                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Afternoon">Afternoon</option>
+                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Evening">Evening</option>
+                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Night">Night</option>
+                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="All day">All day</option>
+                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Custom">Custom</option>
+                                            </select>
+
+                                        
+                                            <select
+                                                className="w-full border rounded-md px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition cursor-pointer"
+                                                defaultValue="none"
+                                            >
+                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="none">Does not repeat</option>
+                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="daily">Daily</option>
+                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="monthly">Monthly</option>
+                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="yearly">Yearly</option>
+                                            </select>
+
+                                            <div className="flex gap-2">
+                                                <Button
+                                                    onClick={() => setReminder(false)}
+                                                    className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700  py-2 rounded-md transition"
+                                                >
+                                                    Back
+                                                </Button>
+                                                <Button
+                                                    onClick={() => {
+                                                        setReminder(false);
+                                                        setIsReminderOpen(false);
+                                                    }}
+                                                    className="flex-1 bg-blue-500 hover:bg-blue-600 text-white  py-2 rounded-md transition"
+                                                >
+                                                    Save
+                                                </Button>
+                                            </div>
+                                        </div>
+
+                                )}
+                            </div>
+                        </Dropdown>
+                    )}
+                </div>
+
+                <div className="relative">
+                    <ToolButton
+                        icon={UserPlus}
+                        onClick={() => {
+                            closeAllDropdowns();
+                            setIsCollaboratorOpen(!isCollaboratorOpen);
+                        }}
+                        label="Collaborator"
+                    />
+
+                    {isCollaboratorOpen && (
+                        <Dropdown onClose={() => setIsCollaboratorOpen(false)}>
+                            <div className="p-4 min-w-[320px]">
+                                <h3 className="text-sm  text-gray-700 mb-3">Collaborators</h3>
+                                <div className="flex items-center gap-2 mb-3">
+                                    <User size={20} className="text-gray-600" />
+                                    <div className="flex-1">
+                                        <p className="text-sm  text-gray-800">You (Owner)</p>
+                                        <p className="text-xs text-gray-500">user@example.com</p>
+                                    </div>
+                                </div>
+                                <div className="flex items-center gap-2 border-t pt-3 cursor-pointer">
+                                    <UserPlus size={20} className="text-gray-600" />
+                                    <input
+                                        type="email"
+                                        placeholder="Person or email to share with"
+                                        className="flex-1 text-sm outline-none"
+                                    />
+                                </div>
+                                <div className="flex justify-end gap-2 mt-4">
+                                    <button onClick={onClose} className="px-4 py-1 text-sm text-gray-600 hover:bg-gray-100 rounded">Cancel</button>
+                                    <button className="px-4 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">Save</button>
+                                </div>
+                            </div>
+                        </Dropdown>
+                    )}
+                </div>
+
+               
 
                 <ToolButton
                     icon={Image}
@@ -307,7 +387,7 @@ function NoteDown({
 
                 <button
                     onClick={onClose}
-                    className="text-sm font-medium text-gray-700 hover:bg-gray-100 hover:bg-opacity-10 px-4 py-1.5 rounded transition-colors ml-52"
+                    className="text-sm  text-gray-700 hover:bg-gray-100 hover:bg-opacity-10 px-4 py-1.5 rounded transition-colors ml-52"
                 >
                     Close
                 </button>
