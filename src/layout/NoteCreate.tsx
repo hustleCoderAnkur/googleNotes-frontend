@@ -4,6 +4,7 @@ import {
     X,
     CheckSquare,
     Brush,
+    Clock,
 } from "lucide-react";
 import { useState, useRef, useCallback } from "react";
 import NoteDown from "../components/NoteDown";
@@ -38,6 +39,8 @@ function NoteCreate() {
     const editorRef = useRef<HTMLDivElement>(null);
     const containerRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+    const [reminder, setReminder] = useState<string | null>(null)
+
 
     const [items, setItems] = useState<ListItem[]>([
         { id: '1', text: '', checked: false }
@@ -235,8 +238,9 @@ function NoteCreate() {
                         />
                         
                         {isListMode ? (
-                            <NoteList/>
+                            <NoteList />
                         ) : (
+                            <>
                                 <div
                                     ref={editorRef}
                                     contentEditable
@@ -246,7 +250,21 @@ function NoteCreate() {
                                     data-placeholder="Take a note..."
                                 ></div>
 
+                                {reminder && (
+                                    <div className="mt-2 flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-md text-sm w-fit">
+                                        <Clock size={14} />
+                                        <span>{reminder}</span>
+                                        <button
+                                            onClick={() => setReminder(null)}   
+                                            className="text-xs border border-blue-400 rounded px-2  hover:bg-blue-100 transition text-blue-700"
+                                        >
+                                                <X size={ 14} />
+                                        </button>
+                                    </div>
+                                )}
+                            </>
                         )}
+
 
                         {images.length > 0 && (
                             <div className="grid grid-cols-3 gap-2 mt-3">
@@ -276,6 +294,7 @@ function NoteCreate() {
                         />
 
                         <NoteDown
+                
                             onClose={handleClose}
                             bgColor={bgColor}
                             setBgColor={setBgColor}
@@ -284,6 +303,8 @@ function NoteCreate() {
                             fileInputRef={fileInputRef}
                             editorRef={editorRef}
                             history={history}
+                            setReminder={setReminder}
+                            reminder={reminder}
                             setHistory={setHistory}
                             historyIndex={historyIndex}
                             setHistoryIndex={setHistoryIndex}
