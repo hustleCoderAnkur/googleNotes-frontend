@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { Dropdown, DropdownItem } from "./DropDown.tsx";
 import FormatButton from "./fromatBtn.tsx";
 import ToolButton from "./ToolBtn.tsx";
@@ -45,6 +45,8 @@ interface NoteDownProps {
     handleRedo: () => void;
     reminder: string | null;
     setReminder: (r: string | null) => void;
+    collaborator: string | null;
+    setCollaborator: (r: string | null) => void;
 }
 
 function NoteDown({
@@ -56,10 +58,13 @@ function NoteDown({
     history,
     reminder,
     setReminder,
+    collaborator: _collaborator,
+    setCollaborator,
     historyIndex,
     handleUndo,
     handleRedo
 }: NoteDownProps) {
+    void _collaborator;
     const [isReminderOpen, setIsReminderOpen] = useState(false);
     const [isCollaboratorOpen, setIsCollaboratorOpen] = useState(false);
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -67,6 +72,8 @@ function NoteDown({
     const [isColorOpen, setIsColorOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
     const [customReminder, setCustomReminder] = useState(false);
+    const collabInputRef = useRef<HTMLInputElement | null>(null);
+
 
     const colors: ColorOption[] = [
         { name: 'Default', bgClass: 'bg-black', borderClass: 'border-gray-300', hex: '#000000' },
@@ -123,6 +130,20 @@ function NoteDown({
         setCustomReminder(false);
         setIsReminderOpen(false);
     };
+
+    const saveCollaborator = () => {
+        if (collabInputRef.current === null) return
+        const email = collabInputRef.current?.value.trim();
+
+    if (!email) {
+        alert("Enter a valid email");
+        return
+        }
+        
+
+        setCollaborator(email);
+        collabInputRef.current.value = ''
+    }
 
     return (
         <>
@@ -346,12 +367,13 @@ function NoteDown({
                                     <User size={20} className="text-gray-600" />
                                     <div className="flex-1">
                                         <p className="text-sm text-gray-800">You (Owner)</p>
-                                        <p className="text-xs text-gray-500">user@example.com</p>
+                                        <p className="text-xs text-gray-500">username123@.com</p>
                                     </div>
                                 </div>
                                 <div className="flex items-center gap-2 border-t pt-3 cursor-pointer">
                                     <UserPlus size={20} className="text-gray-600" />
                                     <input
+                                        ref={collabInputRef}
                                         type="email"
                                         placeholder="Person or email to share with"
                                         className="flex-1 text-sm outline-none"
@@ -364,7 +386,12 @@ function NoteDown({
                                     >
                                         Cancel
                                     </button>
-                                    <button className="px-4 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
+                                    <button
+                                        onClick={() => {
+                                            saveCollaborator();
+                                            setIsCollaboratorOpen(false);
+                                        }}
+                                        className="px-4 py-1 text-sm bg-blue-500 text-white rounded hover:bg-blue-600">
                                         Save
                                     </button>
                                 </div>

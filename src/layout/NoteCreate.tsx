@@ -5,8 +5,9 @@ import {
     CheckSquare,
     Brush,
     Clock,
+    User,
 } from "lucide-react";
-import { useState, useRef, useCallback } from "react";
+import { useState, useRef, useCallback, useEffect } from "react";
 import NoteDown from "../components/NoteDown";
 import NoteList from "../components/NoteList";
 import DrawingPage from "../pages/DrawingPage";
@@ -40,6 +41,7 @@ function NoteCreate() {
     const containerRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [reminder, setReminder] = useState<string | null>(null)
+    const [collaborator,setCollaborator] = useState<string | null>(null)
 
 
     const [items, setItems] = useState<ListItem[]>([
@@ -172,6 +174,20 @@ function NoteCreate() {
         setIsExpanded(true);
     }
 
+    useEffect(() => {
+        const saved = localStorage.getItem("collaborator");
+        if (saved) setCollaborator(saved);
+    }, []);
+
+    useEffect(() => {
+        if (collaborator) {
+            localStorage.setItem("collaborator", collaborator);
+        } else {
+            localStorage.removeItem("collaborator");
+        }
+    }, [collaborator]);
+
+
     if (!isExpanded) {
         return (
             <div className="min-h-screen bg-gray-50 flex items-start justify-center pt-16">
@@ -264,6 +280,26 @@ function NoteCreate() {
                                 )}
                             </>
                         )}
+                        {collaborator && (
+                            <div className="mt-2">
+                                <div className="relative inline-block">
+                                    <div
+                                        className="inline-flex items-center justify-center w-8 h-8 border border-blue-300 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition cursor-pointer"
+                                        title={collaborator}
+                                    >
+                                        <User size={16} />
+                                    </div>
+
+                                    <button
+                                        onClick={() => setCollaborator(null)}
+                                        className="absolute -top-1 -right-1 bg-white border border-gray-300 rounded-full p-0.5 hover:bg-gray-100 transition"
+                                    >
+                                        <X size={12} className="text-gray-700" />
+                                    </button>
+                                </div>
+                            </div>
+
+                        )}
 
 
                         {images.length > 0 && (
@@ -294,7 +330,6 @@ function NoteCreate() {
                         />
 
                         <NoteDown
-                
                             onClose={handleClose}
                             bgColor={bgColor}
                             setBgColor={setBgColor}
@@ -305,6 +340,8 @@ function NoteCreate() {
                             history={history}
                             setReminder={setReminder}
                             reminder={reminder}
+                            collaborator={collaborator}
+                            setCollaborator={setCollaborator}
                             setHistory={setHistory}
                             historyIndex={historyIndex}
                             setHistoryIndex={setHistoryIndex}
