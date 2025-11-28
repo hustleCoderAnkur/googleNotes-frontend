@@ -41,9 +41,9 @@ function NoteCreate() {
     const containerRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [reminder, setReminder] = useState<string | null>(null)
-    const [collaborator,setCollaborator] = useState<string | null>(null)
-
-
+    const [collaborator, setCollaborator] = useState<string | null>(null)
+    const [label, setLabel] = useState<string | null>(null)
+    const [isDrawingDropDown, setIsDrawingDropDown] = useState(false);
     const [items, setItems] = useState<ListItem[]>([
         { id: '1', text: '', checked: false }
     ]);
@@ -58,7 +58,6 @@ function NoteCreate() {
         { name: 'Purple', bgClass: 'bg-purple-500', borderClass: 'border-purple-600', hex: '#d500f9' },
         { name: 'Gray', bgClass: 'bg-gray-500', borderClass: 'border-gray-600', hex: '#8d6e63' },
     ];
-
 
     const handleInput = useCallback(() => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -167,6 +166,7 @@ function NoteCreate() {
         setIsListMode(false);
         setIsExpanded(true);
     };
+
     const handleDrawingToggle = (e: React.MouseEvent) => {
         e.stopPropagation();
         setIsDrawing(true);
@@ -186,6 +186,8 @@ function NoteCreate() {
             localStorage.removeItem("collaborator");
         }
     }, [collaborator]);
+
+    if (isDrawingDropDown) return <DrawingPage />;
 
 
     if (!isExpanded) {
@@ -280,6 +282,7 @@ function NoteCreate() {
                                 )}
                             </>
                         )}
+
                         {collaborator && (
                             <div className="mt-2">
                                 <div className="relative inline-block">
@@ -298,7 +301,19 @@ function NoteCreate() {
                                     </button>
                                 </div>
                             </div>
+                        )}
 
+                        {label && (
+                            <div className="mt-2 flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-md text-sm w-fit">
+                                <Clock size={14} />
+                                <span>{label}</span>
+                                <button
+                                    onClick={() => setLabel(null)}
+                                    className="text-xs border border-blue-400 rounded px-2  hover:bg-blue-100 transition text-blue-700"
+                                >
+                                    <X size={14} />
+                                </button>
+                            </div>
                         )}
 
 
@@ -330,6 +345,10 @@ function NoteCreate() {
                         />
 
                         <NoteDown
+                            isDrawingDropDown={isDrawingDropDown}
+                            setIsDrawingDropDown={setIsDrawingDropDown}
+                            label={label}
+                            setLabel={setLabel}
                             onClose={handleClose}
                             bgColor={bgColor}
                             setBgColor={setBgColor}

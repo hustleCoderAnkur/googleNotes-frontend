@@ -19,6 +19,7 @@ import {
     Underline,
     RemoveFormatting,
     Check,
+    Search,
 } from "lucide-react";
 import Button from "./Button.tsx";
 
@@ -30,23 +31,28 @@ interface ColorOption {
 }
 
 interface NoteDownProps {
+    editorRef: React.RefObject<HTMLDivElement | null>;
+    fileInputRef: React.RefObject<HTMLInputElement | null>;
     onClose: () => void;
     bgColor: string;
     setBgColor: React.Dispatch<React.SetStateAction<string>>;
     isPinned: boolean;
     setIsPinned: React.Dispatch<React.SetStateAction<boolean>>;
-    fileInputRef: React.RefObject<HTMLInputElement | null>;
-    editorRef: React.RefObject<HTMLDivElement | null>;
     history: string[];
-    setHistory: React.Dispatch<React.SetStateAction<string[]>>;
     historyIndex: number;
+    setHistory: React.Dispatch<React.SetStateAction<string[]>>;
     setHistoryIndex: React.Dispatch<React.SetStateAction<number>>;
+    isDrawingDropDown: boolean;
+    setIsDrawingDropDown: React.Dispatch<React.SetStateAction<boolean>>;
     handleUndo: () => void;
     handleRedo: () => void;
+
     reminder: string | null;
     setReminder: (r: string | null) => void;
     collaborator: string | null;
     setCollaborator: (r: string | null) => void;
+    label: string | null;
+    setLabel: (r: string | null) => void;
 }
 
 function NoteDown({
@@ -58,22 +64,29 @@ function NoteDown({
     history,
     reminder,
     setReminder,
-    collaborator: _collaborator,
+    collaborator,
     setCollaborator,
+    label,
+    setLabel,
     historyIndex,
     handleUndo,
-    handleRedo
+    handleRedo,
+    isDrawingDropDown,
+    setIsDrawingDropDown
 }: NoteDownProps) {
-    void _collaborator;
+    void collaborator;
+    void label;
+    void isDrawingDropDown
     const [isReminderOpen, setIsReminderOpen] = useState(false);
     const [isCollaboratorOpen, setIsCollaboratorOpen] = useState(false);
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
     const [isTextFormatOpen, setIsTextFormatOpen] = useState(false);
     const [isColorOpen, setIsColorOpen] = useState(false);
+    const [islabelopen, setIsLabelOpen] = useState(false)
     const [showArchived, setShowArchived] = useState(false);
     const [customReminder, setCustomReminder] = useState(false);
     const collabInputRef = useRef<HTMLInputElement | null>(null);
-
+    const labelInputRef = useRef<HTMLInputElement | null>(null);
 
     const colors: ColorOption[] = [
         { name: 'Default', bgClass: 'bg-black', borderClass: 'border-gray-300', hex: '#000000' },
@@ -135,14 +148,21 @@ function NoteDown({
         if (collabInputRef.current === null) return
         const email = collabInputRef.current?.value.trim();
 
-    if (!email) {
-        alert("Enter a valid email");
-        return
+        if (!email) {
+            alert("Enter a valid email");
+            return
         }
-        
-
         setCollaborator(email);
         collabInputRef.current.value = ''
+    }
+
+    const saveLabel = () => {
+        const labeling = labelInputRef.current?.value.trim()
+        if (!labeling) {
+            alert("enter label");
+            return
+        }
+        setLabel(labeling)
     }
 
     return (
@@ -208,8 +228,8 @@ function NoteDown({
                                             key={color.name}
                                             onClick={() => handleColorSelect(color)}
                                             className={`w-12 h-12 rounded-full ${color.bgClass} border-2 ${bgColor === color.bgClass
-                                                    ? 'border-blue-500 ring-2 ring-blue-300'
-                                                    : 'border-gray-300 hover:border-gray-400'
+                                                ? 'border-blue-500 ring-2 ring-blue-300'
+                                                : 'border-gray-300 hover:border-gray-400'
                                                 } transition-all hover:scale-110 flex items-center justify-center`}
                                             title={color.name}
                                         >
@@ -290,17 +310,17 @@ function NoteDown({
                                             className="w-full border rounded-md px-3 py-2 text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition"
                                         />
 
-                                            <select
-                                                className="w-full border rounded-md px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition cursor-pointer"
-                                                defaultValue="none"
-                                            >
-                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Morning">Morning</option>
-                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Afternoon">Afternoon</option>
-                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Evening">Evening</option>
-                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Night">Night</option>
-                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="All day">All day</option>
-                                                <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Custom">Custom</option>
-                                            </select>
+                                        <select
+                                            className="w-full border rounded-md px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition cursor-pointer"
+                                            defaultValue="none"
+                                        >
+                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Morning">Morning</option>
+                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Afternoon">Afternoon</option>
+                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Evening">Evening</option>
+                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Night">Night</option>
+                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="All day">All day</option>
+                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Custom">Custom</option>
+                                        </select>
                                         <select
                                             className="w-full border rounded-md px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition cursor-pointer"
                                             defaultValue="none"
@@ -420,13 +440,58 @@ function NoteDown({
                     {isMoreMenuOpen && (
                         <Dropdown onClose={() => setIsMoreMenuOpen(false)}>
                             <div className="py-2 min-w-[200px]">
-                                <DropdownItem>Delete note</DropdownItem>
-                                <DropdownItem>Add label</DropdownItem>
-                                <DropdownItem>Add drawing</DropdownItem>
+
+                                {/* <DropdownItem>Delete note</DropdownItem> */}
+
+                                <DropdownItem onClick={() => setIsLabelOpen(!islabelopen)}
+                                >Add label</DropdownItem>
+                                {islabelopen && (
+                                    <div className="p-4 border border-gray-200 rounded-lg bg-white mt-2 w-72 shadow-lg">
+                                        <h1 className="text-sm font-medium text-gray-800 mb-3">Label note</h1>
+
+                                        <div className="relative mb-3">
+                                            <input
+                                                ref={labelInputRef}
+                                                type="text"
+                                                placeholder="Enter label name"
+                                                className="w-full border border-gray-300 rounded px-3 py-2 text-sm outline-none focus:border-blue-500 focus:ring-1 focus:ring-blue-500 transition-all"
+                                            />
+                                            <button className="absolute right-2 top-1/2 -translate-y-1/2 text-gray-500 hover:text-gray-700 hover:bg-gray-100 p-1.5 rounded-full transition-colors">
+                                                <Search size={16} />
+                                            </button>
+                                        </div>
+
+                                        <div className="flex justify-end gap-2">
+                                            <button
+                                                onClick={() => {
+                                                    setIsLabelOpen(false);
+                                                    setLabel(null);
+                                                }}
+                                                className="text-sm font-medium px-4 py-2 text-gray-700 rounded hover:bg-gray-100 transition-colors"
+                                            >
+                                                Cancel
+                                            </button>
+                                            <button
+                                                onClick={saveLabel}
+                                                className="text-sm font-medium px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                            >
+                                                Save
+                                            </button>
+                                        </div>
+                                    </div>
+                                )}
+
+                                <DropdownItem
+                                    onClick={() => setIsDrawingDropDown(true)}
+                                >Add drawing
+                                </DropdownItem>
+
+                               
+
                                 <DropdownItem>Make a copy</DropdownItem>
                                 <DropdownItem>Show checkboxes</DropdownItem>
-                                <DropdownItem>Copy to Google Docs</DropdownItem>
-                                <DropdownItem>Version history</DropdownItem>
+                                {/* <DropdownItem>Copy to Google Docs</DropdownItem> */}
+                                {/* <DropdownItem>Version history</DropdownItem> */}
                             </div>
                         </Dropdown>
                     )}
