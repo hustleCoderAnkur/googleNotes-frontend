@@ -43,10 +43,11 @@ interface NoteDownProps {
     setHistory: React.Dispatch<React.SetStateAction<string[]>>;
     setHistoryIndex: React.Dispatch<React.SetStateAction<number>>;
     isDrawingDropDown: boolean;
+    isListDropDown: boolean;
     setIsDrawingDropDown: React.Dispatch<React.SetStateAction<boolean>>;
+    setIsListDropDown: React.Dispatch<React.SetStateAction<boolean>>;
     handleUndo: () => void;
     handleRedo: () => void;
-
     reminder: string | null;
     setReminder: (r: string | null) => void;
     collaborator: string | null;
@@ -72,11 +73,14 @@ function NoteDown({
     handleUndo,
     handleRedo,
     isDrawingDropDown,
-    setIsDrawingDropDown
+    setIsDrawingDropDown,
+    isListDropDown,
+    setIsListDropDown
 }: NoteDownProps) {
     void collaborator;
     void label;
-    void isDrawingDropDown
+    void isDrawingDropDown;
+    void isListDropDown;
     const [isReminderOpen, setIsReminderOpen] = useState(false);
     const [isCollaboratorOpen, setIsCollaboratorOpen] = useState(false);
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -488,8 +492,10 @@ function NoteDown({
 
                                
 
-                                <DropdownItem>Make a copy</DropdownItem>
-                                <DropdownItem>Show checkboxes</DropdownItem>
+                                {/* <DropdownItem>Make a copy</DropdownItem> */}
+                                <DropdownItem
+                                    onClick={() => setIsListDropDown(true)}
+                                >Show checkboxes</DropdownItem>
                                 {/* <DropdownItem>Copy to Google Docs</DropdownItem> */}
                                 {/* <DropdownItem>Version history</DropdownItem> */}
                             </div>

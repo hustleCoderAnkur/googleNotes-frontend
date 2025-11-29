@@ -44,6 +44,7 @@ function NoteCreate() {
     const [collaborator, setCollaborator] = useState<string | null>(null)
     const [label, setLabel] = useState<string | null>(null)
     const [isDrawingDropDown, setIsDrawingDropDown] = useState(false);
+    const[isListDropDown,setIsListDropDown] = useState(false)
     const [items, setItems] = useState<ListItem[]>([
         { id: '1', text: '', checked: false }
     ]);
@@ -189,10 +190,74 @@ function NoteCreate() {
 
     if (isDrawingDropDown) return <DrawingPage />;
 
+    if (isListDropDown)
+        return (
+            <div className="min-h-screen bg-white flex justify-center pt-16">
+                <div className="w-full max-w-2xl px-4">
+
+                    <div
+                        ref={containerRef}
+                        className={`${bgColor} border ${getCurrentBorderClass()} rounded-2xl shadow-sm transition-colors hover:shadow-md relative`}
+                    >
+
+                        <div className="p-4 pb-3">
+                            <input
+                                ref={titleRef}
+                                type="text"
+                                value={title}
+                                onChange={(e) => setTitle(e.target.value)}
+                                placeholder="Title"
+                                className="w-full text-base font-medium text-gray-800 placeholder-gray-500 outline-none mb-3 pr-10 bg-transparent"
+                            />
+
+                            <button
+                                onClick={() => setIsPinned(!isPinned)}
+                                className="absolute top-3 right-3 p-2 hover:bg-gray-200 hover:bg-opacity-20 rounded-full transition-colors z-10"
+                                title={isPinned ? "Unpin note" : "Pin note"}
+                            >
+                                <Pin size={18} className={`${isPinned ? "fill-gray-700" : ""} text-gray-600`} />
+                            </button>
+                        </div>
+
+                        <div className="border-t border-gray-200 p-4 pb-3">
+                            <div className="border-b border-gray-200 pb-3 mb-3">
+                                <NoteList />
+                            </div>
+
+                            <NoteDown
+                                isListDropDown={isListDropDown}
+                                setIsListDropDown={setIsListDropDown}
+                                isDrawingDropDown={isDrawingDropDown}
+                                setIsDrawingDropDown={setIsDrawingDropDown}
+                                label={label}
+                                setLabel={setLabel}
+                                onClose={handleClose}
+                                bgColor={bgColor}
+                                setBgColor={setBgColor}
+                                isPinned={isPinned}
+                                setIsPinned={setIsPinned}
+                                fileInputRef={fileInputRef}
+                                editorRef={editorRef}
+                                history={history}
+                                setReminder={setReminder}
+                                reminder={reminder}
+                                collaborator={collaborator}
+                                setCollaborator={setCollaborator}
+                                setHistory={setHistory}
+                                historyIndex={historyIndex}
+                                setHistoryIndex={setHistoryIndex}
+                                handleUndo={handleUndo}
+                                handleRedo={handleRedo}
+                            />
+                        </div>
+                    </div>
+                </div>
+            </div>
+        );
 
     if (!isExpanded) {
         return (
-            <div className="min-h-screen bg-gray-50 flex items-start justify-center pt-16">
+            <div className="min-h-screen bg-white flex items-start justify-center pt-16">
                 <div className="w-full max-w-2xl px-4">
                     <div
                         onClick={() => setIsExpanded(true)}
@@ -234,7 +299,7 @@ function NoteCreate() {
     }
 
     return (
-        <div className="min-h-screen bg-gray-50 flex items-start justify-center pt-16">
+        <div className="min-h-screen bg-white flex items-start justify-center pt-16">
             <div className="w-full max-w-2xl px-4">
                 <div ref={containerRef} className={`relative ${bgColor} border ${getCurrentBorderClass()} rounded-lg shadow-lg transition-colors`}>
                     <button
@@ -345,6 +410,8 @@ function NoteCreate() {
                         />
 
                         <NoteDown
+                            isListDropDown={isListDropDown}
+                            setIsListDropDown={setIsListDropDown}
                             isDrawingDropDown={isDrawingDropDown}
                             setIsDrawingDropDown={setIsDrawingDropDown}
                             label={label}
