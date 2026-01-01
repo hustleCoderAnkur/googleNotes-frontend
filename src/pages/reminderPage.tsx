@@ -1,30 +1,15 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import NoteCreate from "../layout/NoteCreate";
+import type { note } from "./notesPage";
 import NoteCard from "../components/noteCard";
 import api from "../api/axios";
 
-export interface Block {
-    type: "paragraph" | "list" | "image" | "drawing";
-    text?: string;
-    listItems?: string[];
-    url?: string;
-}
 
-export interface note {
-    _id: string;
-    title: string;
-    content: Block[];
-    isPinned?: boolean;
-    isArchived?: boolean;
-    isDeleted?: boolean;
-    createdAt?: string;
-    updatedAt?: string;
-}
-
-function NotePage() {
-    const [notes, setNotes] = useState<note[]>([]);
-    const [loading, setLoading] = useState(true);
-    const [editing, setEditing] = useState<note | null>(null);
+function ReminderPage() {
+    const [notes, setNotes] = useState<note[]>([])
+    const [editing, setEditing] = useState<note | null>(null)
+    const [loading,setLoading] = useState(true)
+    void setLoading
 
     const handleNoteCreated = (newNote: note) => {
         setNotes(prev => [newNote, ...prev]
@@ -50,25 +35,6 @@ function NotePage() {
             alert("Failed to deletenote")
         }
     }
-
-    useEffect(() => {
-        const fetchNotes = async () => {
-            try {
-                const res = await api.get("/notes/getAllNotes", {
-                    params: {
-                        isArchived: false,
-                    }
-                });
-                setNotes(res.data.data);
-            } catch (error) {
-                console.error("failed to fetch notes", error);
-            } finally {
-                setLoading(false);
-            }
-        };
-        fetchNotes();
-    }, []);
-
     return (
         <div className="max-w-4xl mx-auto mt-6 px-4">
             <NoteCreate
@@ -89,7 +55,7 @@ function NotePage() {
                             onEdit={(note) => setEditing(note)}
                             onUpdated={handleUpdateNote}
                             onArchived={handleArchiveNote}
-                           onDelete={handleDelete}
+                            onDelete={handleDelete}
                         />
 
                     ))}
@@ -99,4 +65,4 @@ function NotePage() {
     );
 }
 
-export default NotePage;
+export default ReminderPage;

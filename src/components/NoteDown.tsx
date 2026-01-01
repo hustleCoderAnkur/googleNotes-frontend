@@ -22,6 +22,7 @@ import {
     Search,
 } from "lucide-react";
 import Button from "./Button.tsx";
+import type { note } from "../pages/notesPage.tsx";
 
 interface ColorOption {
     name: string;
@@ -31,13 +32,16 @@ interface ColorOption {
 }
 
 interface NoteDownProps {
+    note?:note,
     editorRef: React.RefObject<HTMLDivElement | null>;
     fileInputRef: React.RefObject<HTMLInputElement | null>;
     onClose: () => void;
     bgColor: string;
     setBgColor: React.Dispatch<React.SetStateAction<string>>;
     isPinned: boolean;
+    isArchived: boolean;
     setIsPinned: React.Dispatch<React.SetStateAction<boolean>>;
+    setIsArchived: React.Dispatch<React.SetStateAction<boolean>>;
     history: string[];
     historyIndex: number;
     setHistory: React.Dispatch<React.SetStateAction<string[]>>;
@@ -54,6 +58,7 @@ interface NoteDownProps {
     setCollaborator: (r: string | null) => void;
     label: string | null;
     setLabel: (r: string | null) => void;
+    onUpdated?: (updatedNote: note) => void;
 }
 
 function NoteDown({
@@ -65,7 +70,9 @@ function NoteDown({
     history,
     reminder,
     setReminder,
-    collaborator,
+    isArchived,
+    setIsArchived,
+    // collaborator
     setCollaborator,
     label,
     setLabel,
@@ -75,10 +82,11 @@ function NoteDown({
     isDrawingDropDown,
     setIsDrawingDropDown,
     isListDropDown,
-    setIsListDropDown
+    setIsListDropDown,
+    // onUpdated
 }: NoteDownProps) {
-    void collaborator;
     void label;
+    void isArchived;
     void isDrawingDropDown;
     void isListDropDown;
     const [isReminderOpen, setIsReminderOpen] = useState(false);
@@ -87,22 +95,24 @@ function NoteDown({
     const [isTextFormatOpen, setIsTextFormatOpen] = useState(false);
     const [isColorOpen, setIsColorOpen] = useState(false);
     const [islabelopen, setIsLabelOpen] = useState(false)
-    const [showArchived, setShowArchived] = useState(false);
     const [customReminder, setCustomReminder] = useState(false);
     const collabInputRef = useRef<HTMLInputElement | null>(null);
     const labelInputRef = useRef<HTMLInputElement | null>(null);
-
+    
     const colors: ColorOption[] = [
-        { name: 'Default', bgClass: 'bg-black', borderClass: 'border-gray-300', hex: '#000000' },
-        { name: 'Red', bgClass: 'bg-red-500', borderClass: 'border-red-600', hex: '#ff5252' },
-        { name: 'Orange', bgClass: 'bg-orange-500', borderClass: 'border-orange-600', hex: '#ffbc00' },
-        { name: 'Yellow', bgClass: 'bg-yellow-500', borderClass: 'border-yellow-600', hex: '#fef9c3' },
-        { name: 'Green', bgClass: 'bg-green-500', borderClass: 'border-green-600', hex: '#00c853' },
-        { name: 'Blue', bgClass: 'bg-blue-500', borderClass: 'border-blue-600', hex: '#00b0ff' },
-        { name: 'Purple', bgClass: 'bg-purple-500', borderClass: 'border-purple-600', hex: '#d500f9' },
-        { name: 'Gray', bgClass: 'bg-gray-500', borderClass: 'border-gray-600', hex: '#8d6e63' },
-        { name: 'White', bgClass: 'bg-white', borderClass: 'border-gray-300', hex: '#ffffff' },
-    ];
+            { name: 'Default', bgClass: 'bg-white', borderClass: 'border-gray-300', hex: '#ffffff' },
+            { name: 'Coral', bgClass: 'bg-[#f28b82]', borderClass: 'border-[#f28b82]', hex: '#f28b82' },
+            { name: 'Peach', bgClass: 'bg-[#fbbc04]', borderClass: 'border-[#fbbc04]', hex: '#fbbc04' },
+            { name: 'Sand', bgClass: 'bg-[#fff475]', borderClass: 'border-[#fff475]', hex: '#fff475' },
+            { name: 'Mint', bgClass: 'bg-[#ccff90]', borderClass: 'border-[#ccff90]', hex: '#ccff90' },
+            { name: 'Sage', bgClass: 'bg-[#a7ffeb]', borderClass: 'border-[#a7ffeb]', hex: '#a7ffeb' },
+            { name: 'Fog', bgClass: 'bg-[#cbf0f8]', borderClass: 'border-[#cbf0f8]', hex: '#cbf0f8' },
+            { name: 'Storm', bgClass: 'bg-[#aecbfa]', borderClass: 'border-[#aecbfa]', hex: '#aecbfa' },
+            { name: 'Dusk', bgClass: 'bg-[#d7aefb]', borderClass: 'border-[#d7aefb]', hex: '#d7aefb' },
+            { name: 'Blossom', bgClass: 'bg-[#fdcfe8]', borderClass: 'border-[#fdcfe8]', hex: '#fdcfe8' },
+            { name: 'Clay', bgClass: 'bg-[#e6c9a8]', borderClass: 'border-[#e6c9a8]', hex: '#e6c9a8' },
+            { name: 'Chalk', bgClass: 'bg-[#e8eaed]', borderClass: 'border-[#e8eaed]', hex: '#e8eaed' },
+        ];
 
     const closeAllDropdowns = () => {
         setIsReminderOpen(false);
@@ -118,11 +128,7 @@ function NoteDown({
     };
 
     const handleArchive = () => {
-        setShowArchived(true);
-        setTimeout(() => {
-            setShowArchived(false);
-            onClose();
-        }, 2000);
+        setIsArchived(prev => !prev);  
     };
 
     const apply = (command: string, value?: string) => {
@@ -142,6 +148,7 @@ function NoteDown({
             alert("Enter date and time");
             return;
         }
+        
         const format = `${date} at ${time}`;
         setReminder(format);
         setCustomReminder(false);
@@ -156,9 +163,15 @@ function NoteDown({
             alert("Enter a valid email");
             return
         }
-        setCollaborator(email);
-        collabInputRef.current.value = ''
+        setCollaborator(email)
+        
+        if (collabInputRef.current) {
+            collabInputRef.current.value = "";
+        }
+        
     }
+    
+
 
     const saveLabel = () => {
         const labeling = labelInputRef.current?.value.trim()
@@ -232,13 +245,21 @@ function NoteDown({
                                             key={color.name}
                                             onClick={() => handleColorSelect(color)}
                                             className={`w-12 h-12 rounded-full ${color.bgClass} border-2 ${bgColor === color.bgClass
-                                                ? 'border-blue-500 ring-2 ring-blue-300'
-                                                : 'border-gray-300 hover:border-gray-400'
+                                                    ? 'border-blue-500 ring-2 ring-blue-300'
+                                                    : 'border-gray-300 hover:border-gray-400'
                                                 } transition-all hover:scale-110 flex items-center justify-center`}
                                             title={color.name}
                                         >
                                             {bgColor === color.bgClass && (
-                                                <Check size={18} className="text-gray-700" />
+                                                <Check
+                                                    size={18}
+                                                    className={
+                                                        color.name === 'Default'
+                                                            ? 'text-blue-500'  
+                                                            : 'text-gray-800'  
+                                                    }
+                                                    strokeWidth={3}  
+                                                />
                                             )}
                                         </button>
                                     ))}
@@ -429,9 +450,14 @@ function NoteDown({
                     onClick={() => fileInputRef.current?.click()}
                     label="Add image"
                 />
-                <ToolButton icon={Archive} onClick={handleArchive} label="Archive" />
+                
+                <ToolButton
+                    icon={Archive}
+                    onClick={() => {handleArchive()}}
+                    label="Archive" />
 
                 <div className="relative">
+                    
                     <ToolButton
                         icon={MoreVertical}
                         onClick={() => {
@@ -443,9 +469,7 @@ function NoteDown({
 
                     {isMoreMenuOpen && (
                         <Dropdown onClose={() => setIsMoreMenuOpen(false)}>
-                            <div className="py-2 min-w-[200px]">
-
-                                {/* <DropdownItem>Delete note</DropdownItem> */}
+                            <div className="py-2 min-w-[200px]">     
 
                                 <DropdownItem onClick={() => setIsLabelOpen(!islabelopen)}
                                 >Add label</DropdownItem>
@@ -471,13 +495,13 @@ function NoteDown({
                                                     setIsLabelOpen(false);
                                                     setLabel(null);
                                                 }}
-                                                className="text-sm font-medium px-4 py-2 text-gray-700 rounded hover:bg-gray-100 transition-colors"
+                                                className="text-sm font-medium px-2 py-2 text-gray-700 rounded hover:bg-gray-100 transition-colors"
                                             >
                                                 Cancel
                                             </button>
                                             <button
                                                 onClick={saveLabel}
-                                                className="text-sm font-medium px-4 py-2 bg-blue-600 text-white rounded hover:bg-blue-700 transition-colors"
+                                                className="text-sm font-medium px-2 py-2 text-gray-700 rounded hover:bg-gray-100 transition-colors"
                                             >
                                                 Save
                                             </button>
@@ -489,9 +513,6 @@ function NoteDown({
                                     onClick={() => setIsDrawingDropDown(true)}
                                 >Add drawing
                                 </DropdownItem>
-
-                               
-
                                 {/* <DropdownItem>Make a copy</DropdownItem> */}
                                 <DropdownItem
                                     onClick={() => setIsListDropDown(true)}
@@ -518,17 +539,18 @@ function NoteDown({
 
                 <button
                     onClick={onClose}
-                    className="text-sm text-gray-700 hover:bg-gray-100 hover:bg-opacity-10 px-4 py-1.5 rounded transition-colors ml-52"
+                    className="text-sm text-gray-800 hover:bg-gray-100 hover:bg-opacity-10 font-medium px-4 py-1.5 rounded transition-colors ml-38"
                 >
                     Close
                 </button>
             </div>
 
-            {showArchived && (
+            {isArchived && (
                 <div className="fixed bottom-6 left-1/2 -translate-x-1/2 bg-gray-800 text-white text-sm px-6 py-3 rounded shadow-xl z-50 animate-fade-in">
-                    Note archived
+                    Note will be archived
                 </div>
             )}
+        
         </>
     );
 }

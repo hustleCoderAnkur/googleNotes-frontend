@@ -11,6 +11,17 @@ import { useState, useRef, useCallback, useEffect } from "react";
 import NoteDown from "../components/NoteDown";
 import NoteList from "../components/NoteList";
 import DrawingPage from "../pages/DrawingPage";
+import api from "../api/axios";
+import type { note } from "../pages/notesPage";
+
+interface NoteCreateProps {
+    note:note 
+    editing: note | null;
+    onClose: () => void;
+    onNoteCreated: (note: note) => void;
+    onNoteUpdated?: (note: note) => void;
+    onArchived?: (ArchivedNote: note) => void;
+}
 
 interface ListItem {
     id: string;
@@ -18,16 +29,24 @@ interface ListItem {
     checked: boolean;
 }
 
-interface ColorOption {
+export interface ColorOption {
     name: string;
     bgClass: string;
     borderClass: string;
     hex: string;
 }
 
-function NoteCreate() {
+function NoteCreate({
+    note,
+    editing,
+    onClose,
+    onNoteCreated,
+    onNoteUpdated,
+    onArchived,
+}: NoteCreateProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
+    const [isArchived,setIsArchived] = useState(false)
     const [title, setTitle] = useState("");
     const [bgColor, setBgColor] = useState("bg-white");
     const [isListMode, setIsListMode] = useState(false);
@@ -42,6 +61,7 @@ function NoteCreate() {
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [reminder, setReminder] = useState<string | null>(null)
     const [collaborator, setCollaborator] = useState<string | null>(null)
+    const [collaboratorHover, setCollaboratorHover] = useState(false)
     const [label, setLabel] = useState<string | null>(null)
     const [isDrawingDropDown, setIsDrawingDropDown] = useState(false);
     const[isListDropDown,setIsListDropDown] = useState(false)
@@ -59,6 +79,33 @@ function NoteCreate() {
         { name: 'Purple', bgClass: 'bg-purple-500', borderClass: 'border-purple-600', hex: '#d500f9' },
         { name: 'Gray', bgClass: 'bg-gray-500', borderClass: 'border-gray-600', hex: '#8d6e63' },
     ];
+
+    useEffect(() => {
+        if (editing) {
+            setIsExpanded(true);
+            setTitle(editing.title);
+            setIsPinned(editing.isPinned || false);
+
+            if (editorRef.current && editing.content.length > 0) {
+                const firstBlock = editing.content[0];
+                if (firstBlock.type === "paragraph" && firstBlock.text) {
+                    editorRef.current.innerText = firstBlock.text;
+                }
+            }
+        } else {
+            setIsExpanded(false);
+            setTitle("");
+            setIsPinned(false);
+            setBgColor("bg-white");
+            setImages([]);
+            setHistory([""]);
+            setHistoryIndex(0);
+            setIsListMode(false);
+            setItems([{ id: '1', text: '', checked: false }]);
+            if (editorRef.current) editorRef.current.innerHTML = "";
+            if (titleRef.current) titleRef.current.value = "";
+        }
+    }, [editing]);
 
     const handleInput = useCallback(() => {
         if (timeoutRef.current) clearTimeout(timeoutRef.current);
@@ -149,6 +196,8 @@ function NoteCreate() {
         setIsListMode(false);
         setItems([{ id: '1', text: '', checked: false }]);
         if (editorRef.current) editorRef.current.innerHTML = "";
+        if (titleRef.current) titleRef.current.value = "";
+        onClose();
     };
 
     const getCurrentBorderClass = () => {
@@ -188,11 +237,93 @@ function NoteCreate() {
         }
     }, [collaborator]);
 
+    const handleSave = async () => {
+
+        const savedNote = await handleNoteCreate();
+
+        if (collaborator && savedNote?._id) {
+            await saveCollaboratorToDB(savedNote._id);
+        }
+    }
+
+    const handleNoteCreate = async (): Promise<note | null> => {
+
+        const NoteTitle = titleRef.current?.value.trim() || "";
+        const text = editorRef.current?.innerText.trim() || "";
+
+
+        if (!NoteTitle && !text) {
+            alert("empty Note cannot be saved");
+            return null;
+        }
+
+        const payload = {
+            title: NoteTitle,
+            isPinned,
+            isArchived,
+            content: [
+                {
+                    type: "paragraph",
+                    text,
+                },
+            ],
+        };
+
+
+        try {
+            if (editing) {
+
+                const res = await api.put(
+                    `/notes/updateNote/${editing._id}`,
+                    payload
+                );
+                const updatedNote: note = res.data.data;
+
+                onNoteUpdated?.(updatedNote);
+                onClose();
+                return updatedNote;
+            }
+
+            const res = await api.post("/notes/createNote", payload);
+            const savedNote: note = res.data.data;
+
+            if (isArchived) {
+                onArchived?.(savedNote);
+            } else {
+                onNoteCreated?.(savedNote);
+            }
+
+            setTitle("");
+            if (titleRef.current) titleRef.current.value = "";
+            if (editorRef.current) editorRef.current.innerText = "";
+
+            onClose();
+            return savedNote;
+
+        } catch (error) {
+            console.error("Create note failed:", error);
+            return null;
+        }
+    };
+
+    const saveCollaboratorToDB = async (noteId: string) => {
+
+        try {
+                await api.post(`/notes/addCollaborator/${noteId}`, {
+                email: collaborator,
+                permission: "edit"
+            });
+            setCollaborator(null);
+        } catch (error) {
+                console.error("saveCollaboratorToDB error:", error);
+        }
+    }
+
     if (isDrawingDropDown) return <DrawingPage />;
 
     if (isListDropDown)
         return (
-            <div className="min-h-screen bg-white flex justify-center pt-16">
+            <div className=" bg-white flex justify-center pt-16">
                 <div className="w-full max-w-2xl px-4">
 
                     <div
@@ -236,6 +367,8 @@ function NoteCreate() {
                                 setBgColor={setBgColor}
                                 isPinned={isPinned}
                                 setIsPinned={setIsPinned}
+                                isArchived={isArchived}
+                                setIsArchived={setIsArchived}
                                 fileInputRef={fileInputRef}
                                 editorRef={editorRef}
                                 history={history}
@@ -257,7 +390,7 @@ function NoteCreate() {
 
     if (!isExpanded) {
         return (
-            <div className="min-h-screen bg-white flex items-start justify-center pt-16">
+            <div className=" bg-white flex items-start justify-center pt-16">
                 <div className="w-full max-w-2xl px-4">
                     <div
                         onClick={() => setIsExpanded(true)}
@@ -299,7 +432,7 @@ function NoteCreate() {
     }
 
     return (
-        <div className="min-h-screen bg-white flex items-start justify-center pt-16">
+        <div className=" bg-white flex items-start justify-center pt-16">
             <div className="w-full max-w-2xl px-4">
                 <div ref={containerRef} className={`relative ${bgColor} border ${getCurrentBorderClass()} rounded-lg shadow-lg transition-colors`}>
                     <button
@@ -350,7 +483,10 @@ function NoteCreate() {
 
                         {collaborator && (
                             <div className="mt-2">
-                                <div className="relative inline-block">
+                                <div className="relative inline-block"
+                                    onMouseEnter={() => setCollaboratorHover(true)}
+                                    onMouseLeave={() => setCollaboratorHover(false)}
+                                >
                                     <div
                                         className="inline-flex items-center justify-center w-8 h-8 border border-blue-300 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition cursor-pointer"
                                         title={collaborator}
@@ -358,12 +494,12 @@ function NoteCreate() {
                                         <User size={16} />
                                     </div>
 
-                                    <button
-                                        onClick={() => setCollaborator(null)}
+                                    {collaboratorHover && <button
+                                        onClick={() => setCollaborator(note._id)}
                                         className="absolute -top-1 -right-1 bg-white border border-gray-300 rounded-full p-0.5 hover:bg-gray-100 transition"
                                     >
                                         <X size={12} className="text-gray-700" />
-                                    </button>
+                                    </button>}
                                 </div>
                             </div>
                         )}
@@ -425,6 +561,8 @@ function NoteCreate() {
                             editorRef={editorRef}
                             history={history}
                             setReminder={setReminder}
+                            isArchived={isArchived}
+                            setIsArchived={setIsArchived}
                             reminder={reminder}
                             collaborator={collaborator}
                             setCollaborator={setCollaborator}
@@ -434,6 +572,14 @@ function NoteCreate() {
                             handleUndo={handleUndo}
                             handleRedo={handleRedo}
                         />
+
+                        <button
+                            onClick={handleSave}
+                            className="text-sm text-gray-800 font-medium hover:bg-gray-100 hover:bg-opacity-10 px-4 py-1.5 rounded transition-colors"
+                        >
+                            {editing ? "Update" : "Save"}
+                        </button>
+
                     </div>
                 </div>
             </div>

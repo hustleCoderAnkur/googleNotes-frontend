@@ -6,16 +6,17 @@ import {
     Trash2,
 } from "lucide-react";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 
 function Dashboard({ isOpen }:{ isOpen: boolean }) {
     const [isHovered, setIsHovered] = useState(false);
 
     const sidebarItems = [
-        { icon: Lightbulb, label: "Notes" },
-        { icon: BellIcon, label: "Reminders" },
-        { icon: FolderDownIcon, label: "Archived" },
-        { icon: PencilIcon, label: "Edit labels" },
-        { icon: Trash2, label: "Trash" },
+        { icon: Lightbulb, label: "Notes", path: "/notes" },
+        { icon: BellIcon, label: "Reminders", path: "/reminders" },
+        { icon: PencilIcon, label: "Edit Labels", path: "/labels" },
+        { icon: FolderDownIcon, label: "Archive", path: "/archive" },
+        { icon: Trash2, label: "Trash", path: "/trash" },
     ];
 
     return (
@@ -34,8 +35,8 @@ function Dashboard({ isOpen }:{ isOpen: boolean }) {
                         const Icon = item.icon;
 
                         return (
-
-                            <button
+                            <Link
+                                to={item.path}
                                 key={index}
                                 className="w-full flex items-center gap-4 px-6 py-3 hover:bg-gray-200 rounded-r-full transition-all duration-200 group"
                             >
@@ -43,14 +44,12 @@ function Dashboard({ isOpen }:{ isOpen: boolean }) {
                                     size={20}
                                     className="text-gray-600 group-hover:text-gray-800 transition-colors shrink-0"
                                 />
-
                                 {(isOpen || isHovered) && (
                                     <h2 className="text-sm font-medium text-gray-700 group-hover:text-gray-900 whitespace-nowrap">
                                         {item.label}
                                     </h2>
                                 )}
-
-                            </button>
+                            </Link>
                         )
                     })}
                 </nav>
