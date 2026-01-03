@@ -32,7 +32,7 @@ interface ColorOption {
 }
 
 interface NoteDownProps {
-    note?:note,
+    note?: note,
     editorRef: React.RefObject<HTMLDivElement | null>;
     fileInputRef: React.RefObject<HTMLInputElement | null>;
     onClose: () => void;
@@ -54,6 +54,8 @@ interface NoteDownProps {
     handleRedo: () => void;
     reminder: string | null;
     setReminder: (r: string | null) => void;
+    reminderDate?: Date | null;
+    setReminderDate?: (date: Date | null) => void;
     collaborator: string | null;
     setCollaborator: (r: string | null) => void;
     label: string | null;
@@ -70,6 +72,8 @@ function NoteDown({
     history,
     reminder,
     setReminder,
+    reminderDate,
+    setReminderDate,
     isArchived,
     setIsArchived,
     // collaborator
@@ -89,6 +93,8 @@ function NoteDown({
     void isArchived;
     void isDrawingDropDown;
     void isListDropDown;
+    void reminderDate;
+
     const [isReminderOpen, setIsReminderOpen] = useState(false);
     const [isCollaboratorOpen, setIsCollaboratorOpen] = useState(false);
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
@@ -96,23 +102,25 @@ function NoteDown({
     const [isColorOpen, setIsColorOpen] = useState(false);
     const [islabelopen, setIsLabelOpen] = useState(false)
     const [customReminder, setCustomReminder] = useState(false);
+    const [pickedDate, setPickedDate] = useState("");
+    const [pickedTime, setPickedTime] = useState("");
     const collabInputRef = useRef<HTMLInputElement | null>(null);
     const labelInputRef = useRef<HTMLInputElement | null>(null);
-    
+
     const colors: ColorOption[] = [
-            { name: 'Default', bgClass: 'bg-white', borderClass: 'border-gray-300', hex: '#ffffff' },
-            { name: 'Coral', bgClass: 'bg-[#f28b82]', borderClass: 'border-[#f28b82]', hex: '#f28b82' },
-            { name: 'Peach', bgClass: 'bg-[#fbbc04]', borderClass: 'border-[#fbbc04]', hex: '#fbbc04' },
-            { name: 'Sand', bgClass: 'bg-[#fff475]', borderClass: 'border-[#fff475]', hex: '#fff475' },
-            { name: 'Mint', bgClass: 'bg-[#ccff90]', borderClass: 'border-[#ccff90]', hex: '#ccff90' },
-            { name: 'Sage', bgClass: 'bg-[#a7ffeb]', borderClass: 'border-[#a7ffeb]', hex: '#a7ffeb' },
-            { name: 'Fog', bgClass: 'bg-[#cbf0f8]', borderClass: 'border-[#cbf0f8]', hex: '#cbf0f8' },
-            { name: 'Storm', bgClass: 'bg-[#aecbfa]', borderClass: 'border-[#aecbfa]', hex: '#aecbfa' },
-            { name: 'Dusk', bgClass: 'bg-[#d7aefb]', borderClass: 'border-[#d7aefb]', hex: '#d7aefb' },
-            { name: 'Blossom', bgClass: 'bg-[#fdcfe8]', borderClass: 'border-[#fdcfe8]', hex: '#fdcfe8' },
-            { name: 'Clay', bgClass: 'bg-[#e6c9a8]', borderClass: 'border-[#e6c9a8]', hex: '#e6c9a8' },
-            { name: 'Chalk', bgClass: 'bg-[#e8eaed]', borderClass: 'border-[#e8eaed]', hex: '#e8eaed' },
-        ];
+        { name: 'Default', bgClass: 'bg-white', borderClass: 'border-gray-300', hex: '#ffffff' },
+        { name: 'Coral', bgClass: 'bg-[#f28b82]', borderClass: 'border-[#f28b82]', hex: '#f28b82' },
+        { name: 'Peach', bgClass: 'bg-[#fbbc04]', borderClass: 'border-[#fbbc04]', hex: '#fbbc04' },
+        { name: 'Sand', bgClass: 'bg-[#fff475]', borderClass: 'border-[#fff475]', hex: '#fff475' },
+        { name: 'Mint', bgClass: 'bg-[#ccff90]', borderClass: 'border-[#ccff90]', hex: '#ccff90' },
+        { name: 'Sage', bgClass: 'bg-[#a7ffeb]', borderClass: 'border-[#a7ffeb]', hex: '#a7ffeb' },
+        { name: 'Fog', bgClass: 'bg-[#cbf0f8]', borderClass: 'border-[#cbf0f8]', hex: '#cbf0f8' },
+        { name: 'Storm', bgClass: 'bg-[#aecbfa]', borderClass: 'border-[#aecbfa]', hex: '#aecbfa' },
+        { name: 'Dusk', bgClass: 'bg-[#d7aefb]', borderClass: 'border-[#d7aefb]', hex: '#d7aefb' },
+        { name: 'Blossom', bgClass: 'bg-[#fdcfe8]', borderClass: 'border-[#fdcfe8]', hex: '#fdcfe8' },
+        { name: 'Clay', bgClass: 'bg-[#e6c9a8]', borderClass: 'border-[#e6c9a8]', hex: '#e6c9a8' },
+        { name: 'Chalk', bgClass: 'bg-[#e8eaed]', borderClass: 'border-[#e8eaed]', hex: '#e8eaed' },
+    ];
 
     const closeAllDropdowns = () => {
         setIsReminderOpen(false);
@@ -128,7 +136,7 @@ function NoteDown({
     };
 
     const handleArchive = () => {
-        setIsArchived(prev => !prev);  
+        setIsArchived(prev => !prev);
     };
 
     const apply = (command: string, value?: string) => {
@@ -141,17 +149,30 @@ function NoteDown({
     }, []);
 
     const saveCustomReminder = () => {
-        const date = (document.querySelector('input[type="date"]') as HTMLInputElement)?.value;
-        const time = (document.querySelector('input[type="time"]') as HTMLInputElement)?.value;
-
-        if (!date || !time) {
+        if (!pickedDate || !pickedTime) {
             alert("Enter date and time");
             return;
         }
-        
-        const format = `${date} at ${time}`;
+
+        const dateTime = new Date(`${pickedDate}T${pickedTime}`);
+
+        // Set both reminder label and date
+        const format = `${pickedDate} at ${pickedTime}`;
         setReminder(format);
+        setReminderDate?.(dateTime);
+
         setCustomReminder(false);
+        setIsReminderOpen(false);
+        setPickedDate("");
+        setPickedTime("");
+    };
+
+    const setQuickReminder = (label: string, hours: number) => {
+        const now = new Date();
+        const reminderTime = new Date(now.getTime() + hours * 60 * 60 * 1000);
+
+        setReminder(label);
+        setReminderDate?.(reminderTime);
         setIsReminderOpen(false);
     };
 
@@ -164,14 +185,12 @@ function NoteDown({
             return
         }
         setCollaborator(email)
-        
+
         if (collabInputRef.current) {
             collabInputRef.current.value = "";
         }
-        
-    }
-    
 
+    }
 
     const saveLabel = () => {
         const labeling = labelInputRef.current?.value.trim()
@@ -245,8 +264,8 @@ function NoteDown({
                                             key={color.name}
                                             onClick={() => handleColorSelect(color)}
                                             className={`w-12 h-12 rounded-full ${color.bgClass} border-2 ${bgColor === color.bgClass
-                                                    ? 'border-blue-500 ring-2 ring-blue-300'
-                                                    : 'border-gray-300 hover:border-gray-400'
+                                                ? 'border-blue-500 ring-2 ring-blue-300'
+                                                : 'border-gray-300 hover:border-gray-400'
                                                 } transition-all hover:scale-110 flex items-center justify-center`}
                                             title={color.name}
                                         >
@@ -255,10 +274,10 @@ function NoteDown({
                                                     size={18}
                                                     className={
                                                         color.name === 'Default'
-                                                            ? 'text-blue-500'  
-                                                            : 'text-gray-800'  
+                                                            ? 'text-blue-500'
+                                                            : 'text-gray-800'
                                                     }
-                                                    strokeWidth={3}  
+                                                    strokeWidth={3}
                                                 />
                                             )}
                                         </button>
@@ -292,30 +311,21 @@ function NoteDown({
                                     <div className="space-y-1">
                                         <DropdownItem
                                             icon={Clock}
-                                            onClick={() => {
-                                                setReminder("Today, 8:00 PM");
-                                                setIsReminderOpen(false);
-                                            }}
+                                            onClick={() => setQuickReminder("Today, 8:00 PM", 8)}
                                         >
                                             Today, 8:00 PM
                                         </DropdownItem>
 
                                         <DropdownItem
                                             icon={Clock}
-                                            onClick={() => {
-                                                setReminder("Tomorrow, 8:00 AM");
-                                                setIsReminderOpen(false);
-                                            }}
+                                            onClick={() => setQuickReminder("Tomorrow, 8:00 AM", 24)}
                                         >
                                             Tomorrow, 8:00 AM
                                         </DropdownItem>
 
                                         <DropdownItem
                                             icon={Clock}
-                                            onClick={() => {
-                                                setReminder("Next week, Mon 8:00 AM");
-                                                setIsReminderOpen(false);
-                                            }}
+                                            onClick={() => setQuickReminder("Next week, Mon 8:00 AM", 168)}
                                         >
                                             Next week, Mon 8:00 AM
                                         </DropdownItem>
@@ -332,34 +342,24 @@ function NoteDown({
 
                                         <input
                                             type="date"
+                                            value={pickedDate}
+                                            onChange={(e) => setPickedDate(e.target.value)}
                                             className="w-full border rounded-md px-3 py-2 text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition"
                                         />
 
-                                        <select
-                                            className="w-full border rounded-md px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition cursor-pointer"
-                                            defaultValue="none"
-                                        >
-                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Morning">Morning</option>
-                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Afternoon">Afternoon</option>
-                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Evening">Evening</option>
-                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Night">Night</option>
-                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="All day">All day</option>
-                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700 " value="Custom">Custom</option>
-                                        </select>
-                                        <select
-                                            className="w-full border rounded-md px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition cursor-pointer"
-                                            defaultValue="none"
-                                        >
-                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700" value="none">Does not repeat</option>
-                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700" value="daily">Daily</option>
-                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700" value="monthly">Monthly</option>
-                                            <option className="py-2 px-3 hover:bg-blue-50 bg-white text-gray-700" value="yearly">Yearly</option>
-                                        </select>
+                                        <input
+                                            type="time"
+                                            value={pickedTime}
+                                            onChange={(e) => setPickedTime(e.target.value)}
+                                            className="w-full border rounded-md px-3 py-2 text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition"
+                                        />
 
                                         <div className="flex gap-2">
                                             <Button
                                                 onClick={() => {
                                                     setCustomReminder(false);
+                                                    setPickedDate("");
+                                                    setPickedTime("");
                                                 }}
                                                 className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-md transition"
                                             >
@@ -381,6 +381,7 @@ function NoteDown({
                                         <Button
                                             onClick={() => {
                                                 setReminder(null);
+                                                setReminderDate?.(null);
                                                 setIsReminderOpen(false);
                                             }}
                                             className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-md transition"
@@ -450,14 +451,14 @@ function NoteDown({
                     onClick={() => fileInputRef.current?.click()}
                     label="Add image"
                 />
-                
+
                 <ToolButton
                     icon={Archive}
-                    onClick={() => {handleArchive()}}
+                    onClick={() => { handleArchive() }}
                     label="Archive" />
 
                 <div className="relative">
-                    
+
                     <ToolButton
                         icon={MoreVertical}
                         onClick={() => {
@@ -469,7 +470,7 @@ function NoteDown({
 
                     {isMoreMenuOpen && (
                         <Dropdown onClose={() => setIsMoreMenuOpen(false)}>
-                            <div className="py-2 min-w-[200px]">     
+                            <div className="py-2 min-w-[200px]">
 
                                 <DropdownItem onClick={() => setIsLabelOpen(!islabelopen)}
                                 >Add label</DropdownItem>
@@ -550,7 +551,7 @@ function NoteDown({
                     Note will be archived
                 </div>
             )}
-        
+
         </>
     );
 }

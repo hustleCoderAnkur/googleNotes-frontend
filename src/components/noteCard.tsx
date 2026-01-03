@@ -54,12 +54,18 @@ function NoteCard({
     onDelete,
 }: NoteCardProps) {
     const [isReminderOpen, setIsReminderOpen] = useState(false);
+    const [customReminder, setCustomReminder] = useState(false);
+    const [reminderDate, setReminderDate] = useState<Date | null>(null);
+    const [reminderLabel, setReminderLabel] = useState<string | null>(null);
+    const [reminderId, setReminderId] = useState<string | null>(null);
+    const [pickedDate, setPickedDate] = useState("");
+    const [pickedTime, setPickedTime] = useState("");
+
     const [isCollaboratorOpen, setIsCollaboratorOpen] = useState(false);
     const [isMoreMenuOpen, setIsMoreMenuOpen] = useState(false);
     const [isColorOpen, setIsColorOpen] = useState(false);
     const [islabelopen, setIsLabelOpen] = useState(false);
     const [showArchived, setShowArchived] = useState(false);
-    const [customReminder, setCustomReminder] = useState(false);
     const [collaborator, setCollaborator] = useState<collaborator[]>([]);
     const [hover, setHover] = useState(false);
     const [collaboratorHover, setCollaboratorHover] = useState<string | null>(null);
@@ -68,7 +74,6 @@ function NoteCard({
     const labelInputRef = useRef<HTMLInputElement | null>(null);
     const [bgColor, setBgColor] = useState("bg-white");
     const fileInputRef = useRef<HTMLInputElement>(null);
-    const [reminder, setReminder] = useState<string | null>(null);
     const [label, setLabel] = useState<string | null>(null);
     const [isDrawingDropDown, setIsDrawingDropDown] = useState(false);
     const [isListDropDown, setIsListDropDown] = useState(false);
@@ -138,17 +143,15 @@ function NoteCard({
         }
     };
 
-    const saveCustomReminder = () => {
-        const date = (document.querySelector('input[type="date"]') as HTMLInputElement)?.value;
-        const time = (document.querySelector('input[type="time"]') as HTMLInputElement)?.value;
+    const setReminder = async (label: string, hours: number) => {
+        const now = new Date();
+        const reminderTime = new Date(now.getTime() + hours * 60 * 60 * 1000);
 
-        if (!date || !time) {
-            alert("Enter date and time");
-            return;
-        }
-        const format = `${date} at ${time}`;
-        setReminder(format);
-        setCustomReminder(false);
+        setReminderLabel(label);
+        setReminderDate(reminderTime);
+
+        await saveCustomReminder();
+
         setIsReminderOpen(false);
     };
 
@@ -176,14 +179,14 @@ function NoteCard({
             setIsCollaboratorOpen(false);
         }
         catch (error) {
-            if (axios.isAxiosError(error)) {             
+            if (axios.isAxiosError(error)) {
                 console.error("ERROR:", error);
                 alert("Unexpected frontend error");
             }
         }
     }
 
-    const removeCollaborator = async (userId: string) => {        
+    const removeCollaborator = async (userId: string) => {
         try {
             const res = await api.delete(`/notes/removeCollaborator/${note._id}/${userId}`);
 
@@ -215,6 +218,42 @@ function NoteCard({
             });
     }, [note._id])
 
+    useEffect(() => {
+        if (!note._id) {
+            console.log("note._id missing");
+            return;
+        }
+
+        api.get(`/reminder/getReminder/${note._id}`)
+            .then(res => {
+                const reminder = res.data?.data;
+
+                if (!reminder) {
+                    setReminderDate(null);
+                    setReminderLabel(null);
+                    setReminderId(null); 
+                    return;
+                }
+
+                setReminderId(reminder._id.toString());
+                const date = new Date(reminder.reminderDate);
+
+                if (isNaN(date.getTime())) {
+                    console.log("Invalid date received");
+                    return;
+                }
+
+                setReminderDate(date);
+                setReminderLabel(date.toLocaleString());
+            })
+            .catch(err => {
+                console.error(" API ERROR:", err);
+                console.error(" Error response:", err.response);
+                setReminderDate(null);
+                setReminderLabel(null);
+            });
+    }, [note._id]);
+
     const saveLabel = () => {
         const labeling = labelInputRef.current?.value.trim();
         if (!labeling) {
@@ -224,6 +263,79 @@ function NoteCard({
         setLabel(labeling);
         setIsLabelOpen(false);
     };
+    
+    const handleEditReminder = () => {
+        if (!reminderDate) return;
+
+        const d = new Date(reminderDate);
+
+        setPickedDate(d.toISOString().split("T")[0]); 
+        setPickedTime(d.toTimeString().slice(0, 5)); 
+        setCustomReminder(true);
+        setIsReminderOpen(true);
+    };
+
+    const buildDate = () => {
+        if (!pickedDate || !pickedTime) return null;
+        return new Date(`${pickedDate}T${pickedTime}`);
+    };
+    const saveCustomReminder = async () => {
+        const date = buildDate();
+        if (!date) {
+            alert("Pick date & time");
+            return;
+        }
+
+        try {
+            let res;
+
+            if (reminderId) {
+                res = await api.put(
+                    `/reminder/updateReminders/${reminderId}`,
+                    { reminderDate: date, isActive: true }
+                );
+            }
+            else {
+                res = await api.post(
+                    `/reminder/createReminder/${note._id}`,
+                    { reminderDate: date }
+                );
+            }
+
+            const saved = res.data.data;
+            const newDate = new Date(saved.reminderDate);
+
+            setReminderId(saved._id);
+            setReminderDate(newDate);
+            setReminderLabel(newDate.toLocaleString());
+
+            setIsReminderOpen(false);
+            setCustomReminder(false);
+            setPickedDate("");
+            setPickedTime("");
+
+        } catch (err) {
+            console.error("Reminder save failed", err);
+        }
+    };
+
+
+    const clearReminder = async () => {
+    try {
+         await api.delete(`/reminder/deleteReminder/${note._id}`);
+
+        setReminderLabel(null);
+        setReminderDate(null);
+        setPickedDate("");
+        setPickedTime("");
+        setIsReminderOpen(false);
+
+        alert("Reminder deleted successfully!");
+    } catch (error) {
+        console.error("Error response:", error);
+        alert("Failed to delete reminder");
+    }
+};
 
     return (
         <div
@@ -266,7 +378,6 @@ function NoteCard({
                             <div
                                 className="inline-flex items-center justify-center w-8 h-8 border border-blue-300 rounded-md bg-blue-100 text-blue-700 hover:bg-blue-200 transition cursor-pointer"
                                 title={`${collab.user.email} (${collab.permission})`}
-
                             >
                                 <User size={16} />
                             </div>
@@ -292,7 +403,7 @@ function NoteCard({
                 className="text-sm text-gray-800 space-y-2 cursor-text"
                 onClick={() => onEdit(note)}
             >
-                {note.content.map((block, index) => {
+                {note.content?.map((block, index) => {
                     if (block.type === "paragraph") {
                         return (
                             <p key={index} className="leading-relaxed">
@@ -321,15 +432,26 @@ function NoteCard({
                             />
                         );
                     }
-
                     return null;
                 })}
             </div>
 
-            {reminder && (
-                <div className="mt-3 flex items-center gap-2 text-xs text-gray-600 bg-gray-50 p-2 rounded">
+            {reminderLabel && (
+                <div
+                    className="mt-2 flex items-center gap-2 bg-blue-50 text-blue-700 px-3 py-1 rounded-md text-sm w-fit cursor-pointer"
+                    onClick={handleEditReminder}
+                >
                     <Clock size={14} />
-                    <span>{reminder}</span>
+                    <span>{reminderLabel}</span>
+                    <button
+                        onClick={(e) => {
+                            e.stopPropagation();
+                            clearReminder();
+                        }}
+                        className="text-xs border border-blue-400 rounded px-2 hover:bg-blue-100"
+                    >
+                        <X size={14} />
+                    </button>
                 </div>
             )}
 
@@ -400,34 +522,25 @@ function NoteCard({
                                         <h3 className="text-sm text-gray-700 mb-2">Remind me</h3>
                                         <p className="text-xs text-gray-500 mb-3">Saved in Google Reminders</p>
 
-                                        {reminder === null && !customReminder ? (
+                                        {reminderLabel === null && !customReminder ? (
                                             <div className="space-y-1">
                                                 <DropdownItem
                                                     icon={Clock}
-                                                    onClick={() => {
-                                                        setReminder("Today, 8:00 PM");
-                                                        setIsReminderOpen(false);
-                                                    }}
+                                                    onClick={() => setReminder("Today, 8:00 PM", 8)}
                                                 >
                                                     Today, 8:00 PM
                                                 </DropdownItem>
 
                                                 <DropdownItem
                                                     icon={Clock}
-                                                    onClick={() => {
-                                                        setReminder("Tomorrow, 8:00 AM");
-                                                        setIsReminderOpen(false);
-                                                    }}
+                                                    onClick={() => setReminder("Tomorrow, 8:00 AM", 24)}
                                                 >
                                                     Tomorrow, 8:00 AM
                                                 </DropdownItem>
 
                                                 <DropdownItem
                                                     icon={Clock}
-                                                    onClick={() => {
-                                                        setReminder("Next week, Mon 8:00 AM");
-                                                        setIsReminderOpen(false);
-                                                    }}
+                                                    onClick={() => setReminder("Next week, Mon 8:00 AM", 168)}
                                                 >
                                                     Next week, Mon 8:00 AM
                                                 </DropdownItem>
@@ -438,66 +551,43 @@ function NoteCard({
                                                     Pick date & time
                                                 </DropdownItem>
                                             </div>
-                                        ) : customReminder ? (
+                                        ) : customReminder && (
                                             <div className="space-y-3 mt-2">
                                                 <h2 className="text-sm font-semibold text-gray-700">Pick date & time</h2>
 
                                                 <input
                                                     type="date"
+                                                    value={pickedDate}
+                                                    onChange={(e) => setPickedDate(e.target.value)}
                                                     className="w-full border rounded-md px-3 py-2 text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition"
                                                 />
 
-                                                <select
-                                                    className="w-full border rounded-md px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition cursor-pointer"
-                                                    defaultValue="none"
-                                                >
-                                                    <option value="Morning">Morning</option>
-                                                    <option value="Afternoon">Afternoon</option>
-                                                    <option value="Evening">Evening</option>
-                                                    <option value="Night">Night</option>
-                                                    <option value="All day">All day</option>
-                                                    <option value="Custom">Custom</option>
-                                                </select>
-
-                                                <select
-                                                    className="w-full border rounded-md px-3 py-2 text-sm bg-white outline-none focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition cursor-pointer"
-                                                    defaultValue="none"
-                                                >
-                                                    <option value="none">Does not repeat</option>
-                                                    <option value="daily">Daily</option>
-                                                    <option value="monthly">Monthly</option>
-                                                    <option value="yearly">Yearly</option>
-                                                </select>
+                                                <input
+                                                    type="time"
+                                                    value={pickedTime}
+                                                    onChange={(e) => setPickedTime(e.target.value)}
+                                                    className="w-full border rounded-md px-3 py-2 text-sm outline-none bg-white focus:ring-2 focus:ring-blue-400 hover:border-gray-400 transition"
+                                                />
 
                                                 <div className="flex gap-2">
                                                     <Button
-                                                        onClick={() => setCustomReminder(false)}
+                                                        onClick={() => {
+                                                            setCustomReminder(false);
+                                                            setPickedDate("");
+                                                            setPickedTime("");
+                                                        }}
                                                         className="flex-1 bg-gray-200 hover:bg-gray-300 text-gray-700 py-2 rounded-md transition"
                                                     >
                                                         Back
                                                     </Button>
-                                                    <Button
-                                                        onClick={saveCustomReminder}
-                                                        className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md transition"
-                                                    >
-                                                        Save
-                                                    </Button>
+                                                        <Button
+                                                            onClick={saveCustomReminder}
+                                                            className="flex-1 bg-blue-500 hover:bg-blue-600 text-white py-2 rounded-md"
+                                                        >
+                                                            Save
+                                                        </Button>
+
                                                 </div>
-                                            </div>
-                                        ) : (
-                                            <div className="mt-2 space-y-2">
-                                                <div className="text-sm text-gray-600 p-2 bg-gray-50 rounded">
-                                                    {reminder}
-                                                </div>
-                                                <Button
-                                                    onClick={() => {
-                                                        setReminder(null);
-                                                        setIsReminderOpen(false);
-                                                    }}
-                                                    className="w-full bg-red-500 hover:bg-red-600 text-white py-2 rounded-md transition"
-                                                >
-                                                    Clear Reminder
-                                                </Button>
                                             </div>
                                         )}
                                     </div>
@@ -535,7 +625,7 @@ function NoteCard({
                                                         <User size={18} className="text-blue-600" />
                                                         <div className="flex-1">
                                                             <p className="text-sm text-gray-800">{collab.user.username}</p>
-                                                            
+
                                                             <p className="text-xs text-gray-500">{collab.user.email}</p>
                                                         </div>
                                                         <button

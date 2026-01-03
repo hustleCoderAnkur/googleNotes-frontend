@@ -103,7 +103,13 @@ function Navbar({ isSideOpen, setIsSideOpen }: MenuBarProps) {
                             {settings && (
                                 <div className="absolute right-0 top-full mt-2 w-40 bg-white shadow-lg rounded-lg border border-gray-200 z-20">
                                     <Dropdown onClose={() => setSettings(false)}>
-                                        <DropdownItem>Settings</DropdownItem>
+                                            <Link
+                                                to={"/settings"}
+                                                >
+                                        <DropdownItem>
+                                            Settings
+                                        </DropdownItem>
+                                            </Link>
                                         <DropdownItem>Disable Dark Theme</DropdownItem>
                                         <DropdownItem>Send Feedback</DropdownItem>
                                         <DropdownItem>Help</DropdownItem>

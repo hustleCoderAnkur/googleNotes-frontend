@@ -45,9 +45,9 @@ function ArchivePage() {
 
     return (
         <>
-            <div className="max-w-4xl mx-auto mt-6 px-4">
+            <div className="max-w-4xl mx-auto mt-6 px-4 bg-white dark:bg-gray-800">
                 {notes.length === 0 ? (
-                    <p className="text-center text-gray-500">
+                    <p className="text-center text-gray-500 dark:text-gray-400">
                         No archived notes
                     </p>
                 ) : (
@@ -70,6 +70,7 @@ function ArchivePage() {
                 )}
             </div>
         </>
+
     )
 }
 

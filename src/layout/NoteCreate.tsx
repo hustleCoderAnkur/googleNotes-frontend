@@ -15,7 +15,7 @@ import api from "../api/axios";
 import type { note } from "../pages/notesPage";
 
 interface NoteCreateProps {
-    note:note 
+    note?: note
     editing: note | null;
     onClose: () => void;
     onNoteCreated: (note: note) => void;
@@ -37,7 +37,7 @@ export interface ColorOption {
 }
 
 function NoteCreate({
-    note,
+    // note,
     editing,
     onClose,
     onNoteCreated,
@@ -46,7 +46,7 @@ function NoteCreate({
 }: NoteCreateProps) {
     const [isExpanded, setIsExpanded] = useState(false);
     const [isPinned, setIsPinned] = useState(false);
-    const [isArchived,setIsArchived] = useState(false)
+    const [isArchived, setIsArchived] = useState(false)
     const [title, setTitle] = useState("");
     const [bgColor, setBgColor] = useState("bg-white");
     const [isListMode, setIsListMode] = useState(false);
@@ -60,11 +60,12 @@ function NoteCreate({
     const containerRef = useRef<HTMLDivElement>(null);
     const timeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const [reminder, setReminder] = useState<string | null>(null)
+    const [reminderDate, setReminderDate] = useState<Date | null>(null);
     const [collaborator, setCollaborator] = useState<string | null>(null)
     const [collaboratorHover, setCollaboratorHover] = useState(false)
     const [label, setLabel] = useState<string | null>(null)
     const [isDrawingDropDown, setIsDrawingDropDown] = useState(false);
-    const[isListDropDown,setIsListDropDown] = useState(false)
+    const [isListDropDown, setIsListDropDown] = useState(false)
     const [items, setItems] = useState<ListItem[]>([
         { id: '1', text: '', checked: false }
     ]);
@@ -195,6 +196,8 @@ function NoteCreate({
         setHistoryIndex(0);
         setIsListMode(false);
         setItems([{ id: '1', text: '', checked: false }]);
+        setReminder(null);
+        setReminderDate(null);
         if (editorRef.current) editorRef.current.innerHTML = "";
         if (titleRef.current) titleRef.current.value = "";
         onClose();
@@ -238,12 +241,27 @@ function NoteCreate({
     }, [collaborator]);
 
     const handleSave = async () => {
+        console.log("=== SAVE FUNCTION DEBUG ===");
+        console.log("1. Reminder state:", reminder);
+        console.log("2. ReminderDate state:", reminderDate);
+        console.log("3. Collaborator:", collaborator);
 
         const savedNote = await handleNoteCreate();
+        console.log("4. Saved note:", savedNote);
 
         if (collaborator && savedNote?._id) {
+            console.log("5. Saving collaborator...");
             await saveCollaboratorToDB(savedNote._id);
         }
+
+        if (reminderDate && savedNote?._id) {
+            console.log("6. Creating reminder with date:", reminderDate);
+            await createReminder(savedNote._id, reminderDate);
+        } else {
+            console.log("6. No reminder to create - reminderDate:", reminderDate, "savedNote?._id:", savedNote?._id);
+        }
+
+        console.log("=== END SAVE DEBUG ===");
     }
 
     const handleNoteCreate = async (): Promise<note | null> => {
@@ -307,17 +325,37 @@ function NoteCreate({
     };
 
     const saveCollaboratorToDB = async (noteId: string) => {
-
         try {
-                await api.post(`/notes/addCollaborator/${noteId}`, {
+            await api.post(`/notes/addCollaborator/${noteId}`, {
                 email: collaborator,
                 permission: "edit"
             });
             setCollaborator(null);
         } catch (error) {
-                console.error("saveCollaboratorToDB error:", error);
+            console.error("saveCollaboratorToDB error:", error);
         }
     }
+
+    const createReminder = async (noteId: string, reminderDateTime?: Date) => {
+        const date = reminderDateTime || reminderDate;
+
+        if (!date) {
+            console.log("No date to send, returning");
+            return;
+        }
+
+        try {
+            const res = await api.post(`/reminder/createReminder/${noteId}`, {
+                reminderDate: date
+            });
+
+            onNoteUpdated?.(res.data.data);
+            alert("Reminder created successfully!");
+        } catch (error) {
+            console.error("Failed to create reminder", error);
+            alert("Failed to create reminder");
+        }
+    };
 
     if (isDrawingDropDown) return <DrawingPage />;
 
@@ -374,6 +412,8 @@ function NoteCreate({
                                 history={history}
                                 setReminder={setReminder}
                                 reminder={reminder}
+                                reminderDate={reminderDate}
+                                setReminderDate={setReminderDate}
                                 collaborator={collaborator}
                                 setCollaborator={setCollaborator}
                                 setHistory={setHistory}
@@ -412,7 +452,7 @@ function NoteCreate({
                             >
                                 <Brush size={20} className="text-gray-600" />
                             </button>
-                            
+
                             <button
                                 onClick={handleTextModeToggle}
                                 className="p-2 hover:bg-gray-100 rounded-full transition-colors"
@@ -452,7 +492,7 @@ function NoteCreate({
                             placeholder="Title"
                             className={`w-full text-base font-medium text-gray-800 placeholder-gray-500 outline-none mb-3 pr-10 ${bgColor} bg-transparent`}
                         />
-                        
+
                         {isListMode ? (
                             <NoteList />
                         ) : (
@@ -471,10 +511,13 @@ function NoteCreate({
                                         <Clock size={14} />
                                         <span>{reminder}</span>
                                         <button
-                                            onClick={() => setReminder(null)}   
+                                            onClick={() => {
+                                                setReminder(null);
+                                                setReminderDate(null);
+                                            }}
                                             className="text-xs border border-blue-400 rounded px-2  hover:bg-blue-100 transition text-blue-700"
                                         >
-                                                <X size={ 14} />
+                                            <X size={14} />
                                         </button>
                                     </div>
                                 )}
@@ -495,7 +538,7 @@ function NoteCreate({
                                     </div>
 
                                     {collaboratorHover && <button
-                                        onClick={() => setCollaborator(note._id)}
+                                        onClick={() => setCollaborator(null)}
                                         className="absolute -top-1 -right-1 bg-white border border-gray-300 rounded-full p-0.5 hover:bg-gray-100 transition"
                                     >
                                         <X size={12} className="text-gray-700" />
@@ -564,6 +607,8 @@ function NoteCreate({
                             isArchived={isArchived}
                             setIsArchived={setIsArchived}
                             reminder={reminder}
+                            reminderDate={reminderDate}
+                            setReminderDate={setReminderDate}
                             collaborator={collaborator}
                             setCollaborator={setCollaborator}
                             setHistory={setHistory}
